@@ -30,8 +30,11 @@ python3 scripts/md2html.py <Specification>/docs/legal .
 改定して版数を上げたときは、Client の `PRIVACY_POLICY_VERSION` も同じ値へ更新すること。
 更新しないと改定後のポリシーに対する同意が取得されない。
 
-## noindex について
+## 検索インデックスについて
 
-本文に `【要確定】`（事業者名・所在地・連絡先）が残っている間は検索インデックスを避けるため、
-各ページに `<meta name="robots" content="noindex">` を入れている。
-記載を確定させたらこの行を削除する。
+事業者名・所在地・連絡先が確定し本文から `【要確定】` が解消されたため、2026-09-16 に
+`<meta name="robots" content="noindex">` を削除した。以後このサイトは検索エンジンに
+インデックスされる。
+
+改定作業中などに一時的にインデックスを避けたい場合は、`scripts/md2html.py` の
+`TEMPLATE` の `<head>` 内へ同じメタタグを戻すこと。
