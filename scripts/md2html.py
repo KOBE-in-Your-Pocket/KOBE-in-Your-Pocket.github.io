@@ -9,7 +9,13 @@ import re
 import sys
 from pathlib import Path
 
-LANGS = [('en', 'English', '../'), ('ja', '日本語', '../ja/'), ('ko', '한국어', '../ko/'), ('zh', '中文', '../zh/')]
+# 言語切替リンクの行き先。パスは出力先の `privacy/` ディレクトリを基準にした相対で持ち、
+# ページ側の階層に応じた接頭辞（build の prefix）を付けて最終的な href にする。
+#
+# en だけ `privacy/index.html`、他は `privacy/<lang>/index.html` と階層が 1 つ違う。
+# 全ページで同じ `../lang/` を使うと en ページだけ `privacy/` の外を指し 404 になるため、
+# ここに `../` を直接書かないこと。
+LANGS = [('en', 'English', ''), ('ja', '日本語', 'ja/'), ('ko', '한국어', 'ko/'), ('zh', '中文', 'zh/')]
 
 
 def inline(text: str) -> str:
@@ -157,14 +163,21 @@ TEMPLATE = """<!doctype html>
 """
 
 
-def build(lang: str, title: str, md_path: Path, notice: str = '') -> str:
+def build(lang: str, title: str, md_path: Path, notice: str = '', prefix: str = '') -> str:
+    """1 ページ分の HTML を組み立てる。
+
+    `prefix` は出力先から `privacy/` へ戻るための相対パス。`privacy/index.html`
+    （en）は '' 、`privacy/<lang>/index.html` は '../' を渡す。
+    """
     md = md_path.read_text()
     md = md.split('## 確定が必要な項目')[0].rstrip()
     # 版数運用の注記はリポジトリ内向けであり、公開ページには載せない。
     md = '\n'.join(l for l in md.split('\n') if not (l.startswith('> ') and 'README.md' in l))
+    # 自分自身の言語はリンクにしないため、prefix + subpath が空になる組み合わせ
+    # （en ページから en へ）は href として出力されない。
     nav = ''.join(
-        (f'<span>{label}</span>' if code == lang else f'<a href="{href}">{label}</a>')
-        for code, label, href in LANGS
+        (f'<span>{label}</span>' if code == lang else f'<a href="{prefix}{subpath}">{label}</a>')
+        for code, label, subpath in LANGS
     )
     return TEMPLATE.format(
         lang=lang,
@@ -179,16 +192,17 @@ if __name__ == '__main__':
     src = Path(sys.argv[1])
     dst = Path(sys.argv[2])
 
+    # 末尾は出力先から privacy/ へ戻る相対パス。en だけ privacy/ 直下に置くため空文字。
     pages = [
-        ('en', 'Privacy Policy', 'privacy-policy.en.md', dst / 'privacy' / 'index.html', ''),
-        ('ja', 'プライバシーポリシー', 'privacy-policy.ja.md', dst / 'privacy' / 'ja' / 'index.html', ''),
+        ('en', 'Privacy Policy', 'privacy-policy.en.md', dst / 'privacy' / 'index.html', '', ''),
+        ('ja', 'プライバシーポリシー', 'privacy-policy.ja.md', dst / 'privacy' / 'ja' / 'index.html', '', '../'),
         ('ko', 'Privacy Policy', 'privacy-policy.en.md', dst / 'privacy' / 'ko' / 'index.html',
-         '한국어 번역을 준비 중입니다. 현재는 영어 원문을 표시합니다.'),
+         '한국어 번역을 준비 중입니다. 현재는 영어 원문을 표시합니다.', '../'),
         ('zh', 'Privacy Policy', 'privacy-policy.en.md', dst / 'privacy' / 'zh' / 'index.html',
-         '中文版正在准备中，当前显示英文原文。'),
+         '中文版正在准备中，当前显示英文原文。', '../'),
     ]
 
-    for lang, title, md_name, out_path, notice in pages:
+    for lang, title, md_name, out_path, notice, prefix in pages:
         out_path.parent.mkdir(parents=True, exist_ok=True)
-        out_path.write_text(build(lang, title, src / md_name, notice))
+        out_path.write_text(build(lang, title, src / md_name, notice, prefix))
         print(f'built {out_path.relative_to(dst)}')
