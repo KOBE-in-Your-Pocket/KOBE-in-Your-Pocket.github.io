@@ -13,21 +13,25 @@ App Store Connect / Google Play Console はアプリ未インストールでも�
 | `https://kobe-in-your-pocket.github.io/privacy/ja/` | 日本語 |
 | `https://kobe-in-your-pocket.github.io/privacy/ko/` | 韓国語（翻訳準備中・英語原文を表示） |
 | `https://kobe-in-your-pocket.github.io/privacy/zh/` | 中国語（翻訳準備中・英語原文を表示） |
+| `https://kobe-in-your-pocket.github.io/terms/` | 利用規約（English） |
+| `https://kobe-in-your-pocket.github.io/terms/ja/` | 利用規約（日本語） |
+| `https://kobe-in-your-pocket.github.io/terms/ko/` | 利用規約（韓国語・翻訳準備中・英語原文を表示） |
+| `https://kobe-in-your-pocket.github.io/terms/zh/` | 利用規約（中国語・翻訳準備中・英語原文を表示） |
 
-Client アプリの `src/features/legal/domain/privacy-policy.ts` がこの URL 構成を前提にしている。
+Client アプリの `src/features/legal/domain/privacy-policy.ts` / `terms-of-use.ts` がこの URL 構成を前提にしている。
 
 ## 更新手順
 
 本文の正は [Specification リポジトリ](https://github.com/KOBE-in-Your-Pocket/Specification) の
-`docs/legal/privacy-policy.*.md`。このリポジトリの HTML は同ファイルから生成する。
+`docs/legal/privacy-policy.*.md` と `docs/legal/terms-of-use.*.md`。このリポジトリの HTML は同ファイルから生成する。
 
 ```bash
 python3 scripts/md2html.py <Specification>/docs/legal .
 ```
 
-生成対象は `privacy/` 配下のみ。`index.html` は手書き。
+生成対象は `privacy/` と `terms/` 配下のみ。`index.html` は手書き。
 
-改定して版数を上げたときは、Client の `PRIVACY_POLICY_VERSION` も同じ値へ更新すること。
+改定して版数を上げたときは、Client の `PRIVACY_POLICY_VERSION`（利用規約は `TERMS_OF_USE_VERSION`）も同じ値へ更新すること。
 更新しないと改定後のポリシーに対する同意が取得されない。
 
 ## 検索インデックスについて

@@ -1,4 +1,4 @@
-"""docs/legal/*.md を GitHub Pages 用の静的 HTML へ変換する。
+"""docs/legal/*.md（プライバシーポリシー・利用規約）を GitHub Pages 用の静的 HTML へ変換する。
 
 対応する記法は原文で実際に使っている範囲（見出し・段落・表・箇条書き・
 引用・水平線・強調・リンク）に限定する。
@@ -9,11 +9,11 @@ import re
 import sys
 from pathlib import Path
 
-# 言語切替リンクの行き先。パスは出力先の `privacy/` ディレクトリを基準にした相対で持ち、
-# ページ側の階層に応じた接頭辞（build の prefix）を付けて最終的な href にする。
+# 言語切替リンクの行き先。パスは出力先の文書ディレクトリ（`privacy/` / `terms/`）を基準にした
+# 相対で持ち、ページ側の階層に応じた接頭辞（build の prefix）を付けて最終的な href にする。
 #
-# en だけ `privacy/index.html`、他は `privacy/<lang>/index.html` と階層が 1 つ違う。
-# 全ページで同じ `../lang/` を使うと en ページだけ `privacy/` の外を指し 404 になるため、
+# en だけ `<文書>/index.html`、他は `<文書>/<lang>/index.html` と階層が 1 つ違う。
+# 全ページで同じ `../lang/` を使うと en ページだけ文書ディレクトリの外を指し 404 になるため、
 # ここに `../` を直接書かないこと。
 LANGS = [('en', 'English', ''), ('ja', '日本語', 'ja/'), ('ko', '한국어', 'ko/'), ('zh', '中文', 'zh/')]
 
@@ -164,8 +164,8 @@ TEMPLATE = """<!doctype html>
 def build(lang: str, title: str, md_path: Path, notice: str = '', prefix: str = '') -> str:
     """1 ページ分の HTML を組み立てる。
 
-    `prefix` は出力先から `privacy/` へ戻るための相対パス。`privacy/index.html`
-    （en）は '' 、`privacy/<lang>/index.html` は '../' を渡す。
+    `prefix` は出力先から文書ディレクトリ（`privacy/` / `terms/`）へ戻るための相対パス。
+    `<文書>/index.html`（en）は '' 、`<文書>/<lang>/index.html` は '../' を渡す。
     """
     md = md_path.read_text()
     md = md.split('## 確定が必要な項目')[0].rstrip()
@@ -190,15 +190,24 @@ if __name__ == '__main__':
     src = Path(sys.argv[1])
     dst = Path(sys.argv[2])
 
-    # 末尾は出力先から privacy/ へ戻る相対パス。en だけ privacy/ 直下に置くため空文字。
-    pages = [
-        ('en', 'Privacy Policy', 'privacy-policy.en.md', dst / 'privacy' / 'index.html', '', ''),
-        ('ja', 'プライバシーポリシー', 'privacy-policy.ja.md', dst / 'privacy' / 'ja' / 'index.html', '', '../'),
-        ('ko', 'Privacy Policy', 'privacy-policy.en.md', dst / 'privacy' / 'ko' / 'index.html',
-         '한국어 번역을 준비 중입니다. 현재는 영어 원문을 표시합니다.', '../'),
-        ('zh', 'Privacy Policy', 'privacy-policy.en.md', dst / 'privacy' / 'zh' / 'index.html',
-         '中文版正在准备中，当前显示英文原文。', '../'),
+    # (出力ディレクトリ, 原文ファイル名の接頭辞, 英語タイトル, 日本語タイトル)
+    documents = [
+        ('privacy', 'privacy-policy', 'Privacy Policy', 'プライバシーポリシー'),
+        ('terms', 'terms-of-use', 'Terms of Use', '利用規約'),
     ]
+
+    # 末尾は出力先から文書ディレクトリへ戻る相対パス。en だけ直下に置くため空文字。
+    # ko / zh は翻訳ができるまで英語原文を表示する。
+    pages = []
+    for out_dir, stem, en_title, ja_title in documents:
+        pages += [
+            ('en', en_title, f'{stem}.en.md', dst / out_dir / 'index.html', '', ''),
+            ('ja', ja_title, f'{stem}.ja.md', dst / out_dir / 'ja' / 'index.html', '', '../'),
+            ('ko', en_title, f'{stem}.en.md', dst / out_dir / 'ko' / 'index.html',
+             '한국어 번역을 준비 중입니다. 현재는 영어 원문을 표시합니다.', '../'),
+            ('zh', en_title, f'{stem}.en.md', dst / out_dir / 'zh' / 'index.html',
+             '中文版正在准备中，当前显示英文原文。', '../'),
+        ]
 
     for lang, title, md_name, out_path, notice, prefix in pages:
         out_path.parent.mkdir(parents=True, exist_ok=True)
